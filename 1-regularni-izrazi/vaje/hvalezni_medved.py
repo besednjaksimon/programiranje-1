@@ -83,3 +83,4 @@ def double_letters(besedilo):
     for ujemanje in re.finditer(vzorec, besedilo, re.DOTALL):
         my_set.add(ujemanje.group(0))
     print(my_set)
+# nekajnekaj

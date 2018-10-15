@@ -9,28 +9,37 @@ import csv
 ###############################################################################
 
 # define the URL of the main page of the bolha cats listing
-cats_frontpage_url = 'TODO'
+cats_frontpage_url = 'http://www.bolha.com/zivali/male-zivali/macke/?sort=0&page=1'
 # the directory to which we save our data
-cat_directory = 'TODO'
+cat_directory = '2-zajem-podatkov/exercises/data_from_bolha'
 # the filename we use to save the frontpage
-frontpage_filename = 'TODO'
+frontpage_filename = 'cats1.html'
 # the filename for the CSV file for the extracted data
-csv_filename = 'TODO'
+csv_filename = 'kittens.csv'
 
 
-def download_url_to_string(TODO):
+def prepare_directory(name_of_file):
+    '''It prepares an empty directory, if it does not exist yet.'''
+    directory = os.path.dirname(name_of_file)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+
+def download_url_to_string(url):
     '''This function takes a URL as argument and tries to download it
     using requests. Upon success, it returns the page contents as string.'''
     try:
         # some code here that may raise an exception
-        return TODO
+        r = requests.get(url)
         # some more code that won't be run if the exception occured
-    except 'TODO':
+    except requests.exceptions.ConnectionError:
         # some error handling / recovery code here
         # we may just display an informative message and quit
-        return TODO
+        print('download failed!') 
+        return None 
     # continue with the non-exceptional code
-    return TODO
+    return r.text
+
 
 
 def save_string_to_file(text, directory, filename):
@@ -49,7 +58,7 @@ def save_string_to_file(text, directory, filename):
 def save_frontpage(TODO):
     '''Save "cats_frontpage_url" to the file
     "cat_directory"/"frontpage_filename"'''
-    return TODO
+    return save_string_to_file(download_url_to_string(cats_frontpage_url), cat_directory, frontpage_filename)
 
 ###############################################################################
 # Now that we have some data, we can think about processing it.

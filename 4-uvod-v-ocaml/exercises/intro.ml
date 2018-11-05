@@ -10,7 +10,11 @@
  - : int = 3
 [*----------------------------------------------------------------------------*)
 
-let rec penultimate_element = ()
+let rec penultimate_element xs = 
+ match xs with
+ | [] -> failwith "List too short"
+ | x :: _last :: [] -> x
+ | x :: xs -> penultimate_element xs
 
 (*----------------------------------------------------------------------------*]
  The function [get k list] returns the [k]-th element in the list [list].
@@ -22,7 +26,14 @@ let rec penultimate_element = ()
  - : int = 1
 [*----------------------------------------------------------------------------*)
 
-let rec get = ()
+let rec get k xs =
+  if k < 0 then
+    get 0 xs
+  else
+    match (k, xs) with
+    | (_, []) -> failwith "List too short"
+    | (0, x :: _) -> x
+    | (k, x :: xs) -> get (k - 1) xs  
 
 (*----------------------------------------------------------------------------*]
  The function [double list] doubles the occurences of elements in the list.
@@ -31,7 +42,13 @@ let rec get = ()
  - : int list = [1; 1; 2; 2; 3; 3]
 [*----------------------------------------------------------------------------*)
 
-let rec double = ()
+let rec double xs =
+  match xs with
+  | [] ->  []
+  | x :: xs -> x :: x :: double xs
+  (* x :: xs -> 
+    let xs_doubled = double xs in
+    x :: x :: xs_doubled *)
 
 (*----------------------------------------------------------------------------*]
  The function [divide k list] divides the list into a pair of lists. The first
@@ -45,8 +62,14 @@ let rec double = ()
  - : int list * int list = ([1; 2; 3; 4; 5], [])
 [*----------------------------------------------------------------------------*)
 
-let rec divide = ()
-
+let rec divide k xs =
+    match (k, xs) with
+    | (_, []) -> ([], [])
+    | (0, xs) -> ([], xs)
+    | (k, list) when k <= 0 -> ([], list)
+    | (k, x :: xs) ->
+      let (l, r) = divide (k-1) xs in
+      (x :: l, r)
 (*----------------------------------------------------------------------------*]
  The function [delete k list] removes the [k]-th element of the list.
  If the list is too short it raises an error.
@@ -89,7 +112,9 @@ let rec insert = ()
  - : int list = [3; 4; 5; 1; 2]
 [*----------------------------------------------------------------------------*)
 
-let rec rotate = ()
+let rec rotate n xs =
+  let (l, r) = divide n xs in 
+  r @ l 
 
 (*----------------------------------------------------------------------------*]
  The function [remove x list] removes all occurrences of [x] in the list.

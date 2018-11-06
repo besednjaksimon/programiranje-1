@@ -65,11 +65,11 @@ let rec double xs =
 let rec divide k xs =
     match (k, xs) with
     | (_, []) -> ([], [])
-    | (0, xs) -> ([], xs)
-    | (k, list) when k <= 0 -> ([], list)
+    | (k, xs) when k <= 0 -> ([], xs)
     | (k, x :: xs) ->
       let (l, r) = divide (k-1) xs in
       (x :: l, r)
+
 (*----------------------------------------------------------------------------*]
  The function [delete k list] removes the [k]-th element of the list.
  If the list is too short it raises an error.
@@ -78,8 +78,14 @@ let rec divide k xs =
  - : int list = [0; 0; 0; 0; 0]
 [*----------------------------------------------------------------------------*)
 
-let rec delete = ()
-
+let rec delete k xs =
+  match (k, xs) with
+  | (k, xs) ->
+    let (l, r) = divide k xs in
+    match (l, r) with
+    | (_, []) -> failwith "List too short"
+    | (l, s :: r) -> l @ r
+    
 (*----------------------------------------------------------------------------*]
  The function [slice i k list] returns the sub-list of [list] from the [i]-th
  up to (excluding) the [k]-th element. Suppose that [i] and [k] are fitting.
@@ -88,7 +94,11 @@ let rec delete = ()
  - : int list = [1; 2; 3]
 [*----------------------------------------------------------------------------*)
 
-let rec slice = ()
+let rec slice i k xs =
+  let (_, r1) = divide i xs in
+  let (l2, r2) = divide (k-i) r1 in
+  match (l2, r2) with
+  | (l2, _) -> l2
 
 (*----------------------------------------------------------------------------*]
  The function [insert x k list] inserts (not replaces) [x] into the list at the
@@ -102,7 +112,14 @@ let rec slice = ()
  - : int list = [1; 0; 0; 0; 0; 0]
 [*----------------------------------------------------------------------------*)
 
-let rec insert = ()
+let rec insert x k xs =
+  if k < 0 then
+    x :: xs
+  else
+    let (l, r) = divide k xs in
+    match (l, r) with
+    | (l, []) -> l @ [x]
+    | (l, r) -> l @ x :: r
 
 (*----------------------------------------------------------------------------*]
  The function [rotate n list] rotates the list to the left by [n] places.
@@ -123,7 +140,14 @@ let rec rotate n xs =
  - : int list = [2; 3; 2; 3]
 [*----------------------------------------------------------------------------*)
 
-let rec remove = ()
+let rec remove x xs =
+  match (x, xs) with
+  | (x, []) -> []
+  | (x, y :: xs) ->
+    if x = y then
+      remove x xs
+    else
+      y :: remove x xs
 
 (*----------------------------------------------------------------------------*]
  The function [is_palindrome] checks if a list is a palindrome.
@@ -135,8 +159,17 @@ let rec remove = ()
  - : bool = false
 [*----------------------------------------------------------------------------*)
 
-let rec is_palindrome = ()
-
+let is_palindrome xs =
+  let rec reverse xs =
+    match xs with
+    | [] -> []
+    | x :: xs -> reverse xs @ x :: []
+  in 
+  if reverse xs = xs then
+    true
+  else
+    false
+    
 (*----------------------------------------------------------------------------*]
  The function [max_on_components] returns a list with the maximum element
  of the two given lists at the each index.
@@ -146,7 +179,15 @@ let rec is_palindrome = ()
  - : int list = [5; 4; 3; 3; 4]
 [*----------------------------------------------------------------------------*)
 
-let rec max_on_components = ()
+let rec max_on_components xs ys =
+  match (xs, ys) with
+  | ([], _) -> []
+  | (_, []) -> []
+  | (x :: xs, y :: ys) ->
+    if x < y then
+      y :: max_on_components xs ys
+    else
+      x :: max_on_components xs ys  
 
 (*----------------------------------------------------------------------------*]
  The function [second_largest] returns the second largest value in the list.
@@ -158,4 +199,15 @@ let rec max_on_components = ()
  - : int = 10
 [*----------------------------------------------------------------------------*)
 
-let rec second_largest = ()
+let rec second_largest xs =
+  let rec largest xs =
+    match xs with
+    | [] -> failwith "List is too short"
+    | [x] -> x
+    | x :: y :: xs ->
+    if x < y then
+      largest (y :: xs)
+    else
+      largest (x :: xs)
+  in
+  largest (remove (largest xs) xs)

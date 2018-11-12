@@ -4,7 +4,13 @@
  Hint: Write a function for reversing lists.
 [*----------------------------------------------------------------------------*)
 
-let rec reverse = ()
+let rec reverse xs = 
+  let rec reverse_aux acc xs =
+    match xs with
+    | [] -> acc
+    | x :: xs -> reverse_aux (x :: acc) xs
+  in
+  reverse_aux [] xs
 
 (*----------------------------------------------------------------------------*]
  The function [repeat x n] returns a list with [n] repetitions of [x]. For
@@ -16,7 +22,10 @@ let rec reverse = ()
  - : string list = []
 [*----------------------------------------------------------------------------*)
 
-let rec repeat = ()
+let rec repeat x n = 
+  match n <= 0 with
+  | true -> []
+  | false -> x :: (repeat x (n-1))
 
 (*----------------------------------------------------------------------------*]
  The function [range] accepts an integer and returns a list of all non-negative
@@ -28,8 +37,14 @@ let rec repeat = ()
  - : int list = [0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10]
 [*----------------------------------------------------------------------------*)
 
-let rec range = ()
-
+let rec range n =
+  let rec range_aux n =
+    match n < 0 with
+    | true -> []
+    | false -> n :: (range (n-1)) 
+  in
+  reverse (range_aux n)
+  
 (*----------------------------------------------------------------------------*]
  The function [map f list] accepts a list [list] of form [x0; x1; x2; ...] and
  a function [f] and returns a list of mapped values, [f(x0); f(x1); f(x2); ...].

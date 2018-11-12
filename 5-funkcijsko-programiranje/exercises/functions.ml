@@ -83,7 +83,13 @@ let map_tlrec f xs =
  - : int list = [0; 1; 2; 5; 6; 7]
 [*----------------------------------------------------------------------------*)
 
-let rec mapi = ()
+let mapi f list =
+  let rec mapi_aux acc i list =
+    match list with
+    | [] -> reverse acc
+    | x :: xs -> mapi_aux ((f x i) :: acc) (i + 1) xs
+  in
+  mapi_aux [] 0 list
 
 (*----------------------------------------------------------------------------*]
  The function [zip list1 list2] accepts two lists and returns a list of pairs
@@ -161,7 +167,18 @@ let unzip_tlrec list =
  - : string = "FICUS"
 [*----------------------------------------------------------------------------*)
 
-let rec fold_left_no_acc = ()
+let fold_left_no_acc f list =
+  match list with
+  | [] -> failwith "List too short!"
+  | [_] -> failwith "List too short!"
+  | x :: xs -> 
+    let rec fold_aux f acc xs =
+      match (acc, xs) with
+      | (_, []) -> acc
+      | (acc, x :: xs) ->
+        fold_aux f (f acc x) xs 
+    in
+    fold_aux f x xs
 
 (*----------------------------------------------------------------------------*]
  The function [apply_sequence f x n] returns the list of repeated applications
@@ -175,7 +192,13 @@ let rec fold_left_no_acc = ()
  - : int list = []
 [*----------------------------------------------------------------------------*)
 
-let rec apply_sequence = ()
+let apply_sequence f x n =
+  let rec apply_aux acc x n =
+    match n < 0 with
+    | true -> reverse acc
+    | false -> apply_aux (x :: acc) (f x) (n - 1)
+  in
+  apply_aux [] x n
 
 (*----------------------------------------------------------------------------*]
  The function [filter f list] returns a list of elements of [list] for which
@@ -185,7 +208,17 @@ let rec apply_sequence = ()
  - : int list = [4; 5]
 [*----------------------------------------------------------------------------*)
 
-let rec filter = ()
+let filter f list =
+  let rec filter_aux acc list =
+    match list with
+    | [] -> reverse acc
+    | x :: xs -> 
+      if f x then
+        filter_aux (x :: acc) xs
+      else
+        filter_aux acc xs
+  in
+  filter_aux [] list
 
 (*----------------------------------------------------------------------------*]
  The function [exists] accepts a list and a function and returns [true] if
@@ -199,7 +232,20 @@ let rec filter = ()
  - : bool = false
 [*----------------------------------------------------------------------------*)
 
-let rec exists = ()
+(*let exists f list =
+  if filter f list = [] then
+    false
+  else
+    true*)
+
+let rec exists f list =
+  match list with
+  | [] -> false
+  | x :: xs ->
+    if f x then
+      true
+    else
+      exists f xs 
 
 (*----------------------------------------------------------------------------*]
  The function [first f default list] returns the first element of the list for
@@ -213,4 +259,11 @@ let rec exists = ()
  - : int = 0
 [*----------------------------------------------------------------------------*)
 
-let rec first = ()
+let rec first f default list =
+  match list with
+  | [] -> default
+  | x :: xs ->
+    if f x then
+      x
+    else
+      first f default xs

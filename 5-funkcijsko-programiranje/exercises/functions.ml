@@ -4,7 +4,7 @@
  Hint: Write a function for reversing lists.
 [*----------------------------------------------------------------------------*)
 
-let rec reverse xs = 
+let reverse xs = 
   let rec reverse_aux acc xs =
     match xs with
     | [] -> acc
@@ -37,14 +37,14 @@ let rec repeat x n =
  - : int list = [0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10]
 [*----------------------------------------------------------------------------*)
 
-let rec range n =
-  let rec range_aux n =
+let range n =
+  let rec range_aux acc n =
     match n < 0 with
-    | true -> []
-    | false -> n :: (range (n-1)) 
+    | true -> acc
+    | false -> range_aux (n :: acc) (n-1)
   in
-  reverse (range_aux n)
-  
+  range_aux [] n
+
 (*----------------------------------------------------------------------------*]
  The function [map f list] accepts a list [list] of form [x0; x1; x2; ...] and
  a function [f] and returns a list of mapped values, [f(x0); f(x1); f(x2); ...].
@@ -54,7 +54,10 @@ let rec range n =
  - : int list = [2; 3; 4; 5; 6]
 [*----------------------------------------------------------------------------*)
 
-let rec map = ()
+let rec map f xs =
+  match xs with
+  | [] -> []
+  | x :: xs -> (f x) :: (map f xs)
 
 (*----------------------------------------------------------------------------*]
   The function [map_tlrec] is the tail recursive version of map.
@@ -64,7 +67,12 @@ let rec map = ()
  - : int list = [2; 3; 4; 5; 6]
 [*----------------------------------------------------------------------------*)
 
-let rec map_tlrec = ()
+let map_tlrec f xs =
+  let rec map_aux acc = function
+    | [] -> reverse acc
+    | x :: xs -> map_aux ((f x) :: acc) xs
+  in
+  map_aux [] xs
 
 (*----------------------------------------------------------------------------*]
  The function [mapi f list] accepts a two argument function and returns a list
@@ -88,7 +96,12 @@ let rec mapi = ()
  Exception: Failure "Different lengths of input lists.".
 [*----------------------------------------------------------------------------*)
 
-let rec zip = ()
+let rec zip xs ys =
+  match (xs, ys) with
+  | ([], []) -> []
+  | (x :: xs, y :: ys) -> (x, y) :: (zip xs ys) 
+  | (_ :: _, [])
+  | ([], _ :: _) -> failwith "Different lengths of input lists."
 
 (*----------------------------------------------------------------------------*]
  The function [zip_enum_tlrec] accepts lists [x_0; x_1; ...] and [y_0; y_1; ...]
@@ -99,7 +112,16 @@ let rec zip = ()
  - : (int * string * int) list = [(0, "a", 7); (1, "b", 3); (2, "c", 4)]
 [*----------------------------------------------------------------------------*)
 
-let rec zip_enum_tlrec = ()
+let zip_enum_tlrec xs ys =
+  let rec zip_aux acc1 i xs ys =
+    match (xs, ys) with
+    | ([], []) -> reverse acc1
+    | (x :: xs, y :: ys) -> zip_aux ((i, x, y) :: acc1) (i + 1) xs ys
+    | (_ :: _, [])
+    | ([], _ :: _) -> failwith "Different lengths of input lists."
+  in
+  zip_aux [] 0 xs ys
+
 (*----------------------------------------------------------------------------*]
  The function [unzip] is the inverse of [zip]. It accepts a list of pairs
  [(x0, y0); (x1, y1); ...] and returns the pair ([x0; x1; ...], [y0; y1; ...]).
@@ -108,7 +130,11 @@ let rec zip_enum_tlrec = ()
  - : int list * string list = ([0; 1; 2], ["a"; "b"; "c"])
 [*----------------------------------------------------------------------------*)
 
-let rec unzip = ()
+let rec unzip = function
+| [] -> ([], [])
+| (x, y) :: tl ->
+  let (xs, ys) = unzip tl in
+  (x :: xs, y :: ys)
 
 (*----------------------------------------------------------------------------*]
  The function [unzip_tlrec] is the tail recursive version of [unzip].
@@ -117,7 +143,14 @@ let rec unzip = ()
  - : int list * string list = ([0; 1; 2], ["a"; "b"; "c"])
 [*----------------------------------------------------------------------------*)
 
-let rec unzip_tlrec = ()
+let unzip_tlrec list =
+  let rec unzip_aux acc1 acc2 list =
+    match list with
+    | [] -> (reverse acc1, reverse acc2)
+    | (x, y) :: tl -> unzip_aux (x :: acc1) (y :: acc2) tl
+  in
+  unzip_aux [] [] list
+
 (*----------------------------------------------------------------------------*]
  The function [fold_left_no_acc f list] accepts a list [x0; x1; ...; xn] and a
  two argument function [f] and returns the value of the computation

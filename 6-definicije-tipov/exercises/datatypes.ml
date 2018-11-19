@@ -55,15 +55,17 @@ let to_pound x =
   | Yen y -> Pound (y *. 0.006894)
   | Krona y -> Pound (y *. 0.0863844)
   | Franc y -> Pound (y *. 0.779851)
+  | Pound y -> Pound y
 
 let to_pound' z = 
-      let rate, value = match z with
-            | Yen x -> (0.006894, x)
-            | Pound x -> (1., x)
-            | Krona x -> (0.0863844, x)
-            | Franc x -> (0.779851, x)
-      in
-      Pound (rate *. value)
+  let rate, value = 
+    match z with
+    | Yen x -> (0.006894, x)
+    | Pound x -> (1., x)
+    | Krona x -> (0.0863844, x)
+    | Franc x -> (0.779851, x)
+  in
+  Pound (rate *. value)
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  We wish to use lists that keep integers as well as booleans. This can be
@@ -89,7 +91,7 @@ type intbool_list =
   | IntCons of int * intbool_list
   | BoolCons of bool * intbool_list 
 
-let x = IntCons (7, BoolCons (true, BoolCons (false, IntCons (7, Empty))));;
+(* let x = IntCons (5, BoolCons (true, BoolCons (false, IntCons (7, Empty))));; *)
 
 (*----------------------------------------------------------------------------*]
  The function [intbool_map f_int f_bool ib_list] maps the values of [ib_list]
@@ -98,12 +100,16 @@ let x = IntCons (7, BoolCons (true, BoolCons (false, IntCons (7, Empty))));;
 [*----------------------------------------------------------------------------*)
 
 let rec intbool_map f_int f_bool ib_list =
-      match ib_list with
-      | Empty -> Empty
-      | IntCons (n, tail) -> let tail = intbool_map f_int f_bool tail in 
-                             IntCons(f_int n, tail)
-      | BoolCons (n, tail) -> let tail = intbool_map f_int f_bool tail in
-                              BoolCons(f_bool n, tail)
+  match ib_list with
+  | Empty -> Empty
+  | IntCons (n, tail) -> 
+    let tail = intbool_map f_int f_bool tail 
+    in 
+    IntCons(f_int n, tail)
+  | BoolCons (n, tail) -> 
+    let tail = intbool_map f_int f_bool tail 
+    in
+    BoolCons(f_bool n, tail)
 
 (*----------------------------------------------------------------------------*]
  The function [intbool_reverse] reverses the order of elements of an
@@ -111,13 +117,13 @@ let rec intbool_map f_int f_bool ib_list =
 [*----------------------------------------------------------------------------*)
 
 let intbool_reverse ib_list = 
-      let rec reverse_aux acc ib_list =
-            match ib_list with
-            | Empty -> acc
-            | IntCons (n, tail) -> reverse_aux IntCons(n, acc) tail
-            | BoolCons (b, tail) -> reverse_aux BoolCons(b, acc) tail
-      in
-      reverse_aux Empty ib_list
+  let rec reverse_aux acc ib_list =
+    match ib_list with
+      | Empty -> acc
+      | IntCons (n, tail) -> reverse_aux (IntCons (n, acc)) tail
+      | BoolCons (b, tail) -> reverse_aux (BoolCons (b, acc)) tail
+  in
+  reverse_aux Empty ib_list
 
 (*----------------------------------------------------------------------------*]
  The function [intbool_separate ib_list] separates the values of [ib_list] into
@@ -126,7 +132,15 @@ let intbool_reverse ib_list =
  change the order of elements.
 [*----------------------------------------------------------------------------*)
 
-let rec intbool_separate = ()
+let intbool_separate ib_list =
+  let rec separate_aux acc1 acc2  = function
+    | Empty -> (acc1, acc2)
+    | IntCons(n, tail) -> 
+      separate_aux (n :: acc1) acc2 tail
+    | BoolCons(b, tail) ->
+      separate_aux acc1 (b :: acc2) tail
+  in
+  separate_aux [] [] (intbool_reverse ib_list)
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  You were chosen to be the database administrator for a world renowned wizard
@@ -143,14 +157,14 @@ let rec intbool_separate = ()
 [*----------------------------------------------------------------------------*)
 
 type magic = 
-      | Fire
-      | Frost
-      | Arcane
+  | Fire
+  | Frost
+  | Arcane
 
 type specialisation = 
-      | Historian
-      | Teacher
-      | Researcher
+  | Historian
+  | Teacher
+  | Researcher
 
 (*----------------------------------------------------------------------------*]
  Every wizard starts out as a newbie. Afterwards they become a student and in
@@ -168,16 +182,16 @@ type specialisation =
 [*----------------------------------------------------------------------------*)
 
 type status = 
-      | Newbie
-      | Student of magic * int
-      | Employee of magic * specialisation
+  | Newbie
+  | Student of magic * int
+  | Employee of magic * specialisation
 
 type wizard = {
-      name : string;
-      status : status
+  name : string;
+  status : status
 }
 
-let profesor = {name = "Matija" ; status = Employee (Fire, Teacher)}
+(* let profesor = {name = "Matija" ; status = Employee (Fire, Teacher)} *)
 
 (*----------------------------------------------------------------------------*]
  We want to count how many users of a certain school of magic are currently in
@@ -192,15 +206,16 @@ let profesor = {name = "Matija" ; status = Employee (Fire, Teacher)}
 [*----------------------------------------------------------------------------*)
 
 type magic_counter = {
-      fire : int;
-      frost : int;
-      arcane : int;
+  fire : int;
+  frost : int;
+  arcane : int;
 }
 
 let update counter magic =
-      match magic with
-      | Fire -> {counter with fire = counter.fire + 1}
-      | Frost -> {counter with frost = }
+  match magic with
+  | Fire -> {counter with fire = counter.fire + 1}
+  | Frost -> {counter with frost = counter.frost + 1}
+  | Arcane -> {counter with arcane = counter.arcane + 1}
 
 (*----------------------------------------------------------------------------*]
  The function [count_magic] accepts a list of wizards and counts the users of
@@ -210,20 +225,20 @@ let update counter magic =
  - : magic_counter = {fire = 3; frost = 0; arcane = 0}
 [*----------------------------------------------------------------------------*)
 
-let count_magic =
-      let rec count_aux counter = function
-            | [] -> counter
-            | {name; status} :: wizards ->
-                  let counter =
-                        begin match status with
-                        | Newbie -> count_aux wizards
-                        | Student -> (m, _) -> update counter m
-                        | Employee -> (m, _) update counter m
-                        end
-                  in
-                  count_aux counter wizards
+let count_magic wizards =
+  let rec count_aux counter = function
+    | [] -> counter
+    | {name; status} :: wizards ->
+      let counter =
+        begin match status with
+        | Newbie -> count_aux counter wizards
+        | Student (magic, _) -> update counter magic
+        | Employee (magic, _) -> update counter magic
+        end
       in
-      count_aux { fire = 0 ; frost = 0 ; arcane = 0} wizards
+      count_aux counter wizards
+  in
+  count_aux { fire = 0 ; frost = 0 ; arcane = 0} wizards
 
 (*----------------------------------------------------------------------------*]
  We wish to find a possible candidate for a job offer. A student can become a
@@ -239,4 +254,46 @@ let count_magic =
  - : string option = Some "Jaina"
 [*----------------------------------------------------------------------------*)
 
-let rec find_candidate = ()
+let rec find_candidate magic specialisation wizard_list =
+  match wizard_list with
+  | [] -> None
+  | {name; status} :: wizards ->
+    begin match status with
+    | Newbie -> find_candidate magic specialisation wizards
+    | Employee (_, _) -> find_candidate magic specialisation wizards
+    | Student (m, n) -> 
+      begin
+        if m = magic then
+          begin
+            if specialisation = Historian then
+              begin
+                if n > 2 then
+                  Some name
+                else
+                  find_candidate magic specialisation wizards
+              end
+            else if specialisation = Researcher then
+              begin
+                if n > 3 then
+                  Some name
+                else
+                  find_candidate magic specialisation wizards
+              end
+            else
+              begin
+                if n > 4 then
+                  Some name
+                else
+                  find_candidate magic specialisation wizards
+              end
+          end
+        else
+          find_candidate magic specialisation wizards
+      end
+    end
+
+
+(* let jaina = {name = "Jaina"; status = Student (Frost, 4)};;
+let bozo = {name = "Bozo"; status = Student (Fire, 5)};;
+let stojan = {name = "Stojan"; status = Student (Arcane, 3)};;
+let seznam = [profesor; jaina; bozo; stojan];; *)

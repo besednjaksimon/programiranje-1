@@ -20,7 +20,17 @@
  - : euro = Euro 0.4305
 [*----------------------------------------------------------------------------*)
 
+type dollar = Dollar of float
+type euro = Euro of float
 
+let dollar_to_euro (Dollar d) = Euro (0.875425238 *. d)
+let euro_to_dollar (Euro e) = Dollar (e /. 0.875425238)
+
+(* 
+let dollar_to_euro x =
+      match x with
+      | Dollar y -> Euro (y *. 0.875425238)
+*)
 
 (*----------------------------------------------------------------------------*]
  Define the type [currency] as a single variant type with constructors for the
@@ -34,7 +44,26 @@
  - : currency = Pound 0.007
 [*----------------------------------------------------------------------------*)
 
+type currency = 
+  | Yen of float
+  | Pound of float
+  | Krona of float
+  | Franc of float
 
+let to_pound x = 
+  match x with
+  | Yen y -> Pound (y *. 0.006894)
+  | Krona y -> Pound (y *. 0.0863844)
+  | Franc y -> Pound (y *. 0.779851)
+
+let to_pound' z = 
+      let rate, value = match z with
+            | Yen x -> (0.006894, x)
+            | Pound x -> (1., x)
+            | Krona x -> (0.0863844, x)
+            | Franc x -> (0.779851, x)
+      in
+      Pound (rate *. value)
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  We wish to use lists that keep integers as well as booleans. This can be
@@ -55,7 +84,12 @@
  Define an example, which represents "[5; true; false; 7]".
 [*----------------------------------------------------------------------------*)
 
+type intbool_list =
+  | Empty
+  | IntCons of int * intbool_list
+  | BoolCons of bool * intbool_list 
 
+let x = IntCons (7, BoolCons (true, BoolCons (false, IntCons (7, Empty))));;
 
 (*----------------------------------------------------------------------------*]
  The function [intbool_map f_int f_bool ib_list] maps the values of [ib_list]
@@ -63,14 +97,27 @@
  [f_bool].
 [*----------------------------------------------------------------------------*)
 
-let rec intbool_map = ()
+let rec intbool_map f_int f_bool ib_list =
+      match ib_list with
+      | Empty -> Empty
+      | IntCons (n, tail) -> let tail = intbool_map f_int f_bool tail in 
+                             IntCons(f_int n, tail)
+      | BoolCons (n, tail) -> let tail = intbool_map f_int f_bool tail in
+                              BoolCons(f_bool n, tail)
 
 (*----------------------------------------------------------------------------*]
  The function [intbool_reverse] reverses the order of elements of an
  [intbool_list]. The function is tail-recursive.
 [*----------------------------------------------------------------------------*)
 
-let rec intbool_reverse = ()
+let intbool_reverse ib_list = 
+      let rec reverse_aux acc ib_list =
+            match ib_list with
+            | Empty -> acc
+            | IntCons (n, tail) -> reverse_aux IntCons(n, acc) tail
+            | BoolCons (b, tail) -> reverse_aux BoolCons(b, acc) tail
+      in
+      reverse_aux Empty ib_list
 
 (*----------------------------------------------------------------------------*]
  The function [intbool_separate ib_list] separates the values of [ib_list] into
@@ -95,7 +142,15 @@ let rec intbool_separate = ()
  a researcher. Define the type [specialisation] that represents those choices.
 [*----------------------------------------------------------------------------*)
 
+type magic = 
+      | Fire
+      | Frost
+      | Arcane
 
+type specialisation = 
+      | Historian
+      | Teacher
+      | Researcher
 
 (*----------------------------------------------------------------------------*]
  Every wizard starts out as a newbie. Afterwards they become a student and in
@@ -112,7 +167,17 @@ let rec intbool_separate = ()
  - : wizard = {name = "Matija"; status = Employed (Fire, Teacher)}
 [*----------------------------------------------------------------------------*)
 
+type status = 
+      | Newbie
+      | Student of magic * int
+      | Employee of magic * specialisation
 
+type wizard = {
+      name : string;
+      status : status
+}
+
+let profesor = {name = "Matija" ; status = Employee (Fire, Teacher)}
 
 (*----------------------------------------------------------------------------*]
  We want to count how many users of a certain school of magic are currently in
@@ -126,7 +191,16 @@ let rec intbool_separate = ()
  - : magic_counter = {fire = 1; frost = 1; arcane = 2}
 [*----------------------------------------------------------------------------*)
 
+type magic_counter = {
+      fire : int;
+      frost : int;
+      arcane : int;
+}
 
+let update counter magic =
+      match magic with
+      | Fire -> {counter with fire = counter.fire + 1}
+      | Frost -> {counter with frost = }
 
 (*----------------------------------------------------------------------------*]
  The function [count_magic] accepts a list of wizards and counts the users of
@@ -136,7 +210,20 @@ let rec intbool_separate = ()
  - : magic_counter = {fire = 3; frost = 0; arcane = 0}
 [*----------------------------------------------------------------------------*)
 
-let rec count_magic = ()
+let count_magic =
+      let rec count_aux counter = function
+            | [] -> counter
+            | {name; status} :: wizards ->
+                  let counter =
+                        begin match status with
+                        | Newbie -> count_aux wizards
+                        | Student -> (m, _) -> update counter m
+                        | Employee -> (m, _) update counter m
+                        end
+                  in
+                  count_aux counter wizards
+      in
+      count_aux { fire = 0 ; frost = 0 ; arcane = 0} wizards
 
 (*----------------------------------------------------------------------------*]
  We wish to find a possible candidate for a job offer. A student can become a

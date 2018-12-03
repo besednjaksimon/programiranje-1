@@ -6,9 +6,9 @@
  empty) subtrees. We assume no further structure of the trees.
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
 
-type tree =
-    | Empty
-    | Node of 'a * 'a tree * 'a tree
+type 'a tree =
+  | Empty
+  | Node of 'a * 'a tree * 'a tree
 
 (*----------------------------------------------------------------------------*]
  We define a test case for simpler testing of functions. The test case
@@ -23,10 +23,10 @@ type tree =
 
 let leaf x = Node(x, Empty, Empty)
 let test_tree =
-    let left = Node(2, leaf 0, Empty)
-    and right = Node(7, leaf 6, leaf 11)
-    in
-    Node(5, left, right)
+  let left = Node(2, leaf 0, Empty)
+  and right = Node(7, leaf 6, leaf 11)
+  in
+  Node(5, left, right)
 
 (*----------------------------------------------------------------------------*]
  The function [mirror] returns a mirrored tree. When applied to our test tree
@@ -44,8 +44,8 @@ let test_tree =
 [*----------------------------------------------------------------------------*)
 
 let rec mirror = function
-    | Empty -> Empty
-    | Node(element, left, right) -> Node(element, mirror right, mirror left)
+  | Empty -> Empty
+  | Node(element, left, right) -> Node(element, mirror right, mirror left)
 
 (*----------------------------------------------------------------------------*]
  The function [height] returns the height (or depth) of the tree and the
@@ -57,6 +57,13 @@ let rec mirror = function
  - : int = 6
 [*----------------------------------------------------------------------------*)
 
+let rec height = function
+  | Empty -> 0
+  | Node (_, l, r) -> 1 + max (height l) (height r)
+
+let rec size = function
+  | Empty -> 0
+  | Node (_, l, r) -> 1 + size l + size r
 
 (*----------------------------------------------------------------------------*]
  The function [map_tree f tree] maps the tree into a new tree with nodes that
@@ -68,6 +75,9 @@ let rec mirror = function
  Node (Node (Empty, true, Empty), true, Node (Empty, true, Empty)))
 [*----------------------------------------------------------------------------*)
 
+let rec map_tree f = function
+  | Empty -> Empty
+  | Node (x, l ,r) -> Node (f x, map_tree f l, map_tree f r)
 
 (*----------------------------------------------------------------------------*]
  The function [list_of_tree] returns the list of all elements in the tree. If
@@ -77,6 +87,9 @@ let rec mirror = function
  - : int list = [0; 2; 5; 6; 7; 11]
 [*----------------------------------------------------------------------------*)
 
+let rec list_of_tree = function
+  | Empty -> []
+  | Node (x, l, r) -> list_of_tree l @ [x] @ list_of_tree r
 
 (*----------------------------------------------------------------------------*]
  The function [is_bst] checks wheter a tree is a binary search tree (BST). 
@@ -89,6 +102,19 @@ let rec mirror = function
  - : bool = false
 [*----------------------------------------------------------------------------*)
 
+let is_bst tree =
+  let xs = list_of_tree tree in
+  let rec aux xs =
+    match xs with
+    | [] -> true
+    | [x] -> true
+    | x :: y :: tail ->
+      if x < y then
+        aux (y :: tail)
+      else
+        false
+  in
+  aux xs
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  In the remaining exercises we assume that all trees are binary search trees.
@@ -104,6 +130,27 @@ let rec mirror = function
  - : bool = false
 [*----------------------------------------------------------------------------*)
 
+let rec insert x tree =
+  match tree with
+  | Empty -> leaf x
+  | Node (y, l, r) ->
+    if x = y then
+      tree
+    else if x < y then
+      Node (y, insert x l, r)
+    else
+      Node (y, l, insert x r)
+
+let rec member x tree =
+  match tree with
+  | Empty -> false
+  | Node (y, l, r) ->
+    if x = y then
+      true
+    else if x < y then
+      member x l
+    else
+      member x r
 
 (*----------------------------------------------------------------------------*]
  The function [member2] does not assume that the tree is a bst.
@@ -112,6 +159,14 @@ let rec mirror = function
  [member2] assuming an input tree with n nodes and depth of log(n). 
 [*----------------------------------------------------------------------------*)
 
+let rec member2 x tree =
+  match tree with
+  | Empty -> false
+  | Node (y, l, r) ->
+    if x = y then
+      true
+    else
+      member2 x l || member2 x r
 
 (*----------------------------------------------------------------------------*]
  The function [succ] returns the successor of the root of the given tree, if
@@ -126,6 +181,27 @@ let rec mirror = function
  - : int option = None
 [*----------------------------------------------------------------------------*)
 
+let succ tree =
+  let rec min tree =
+    match tree with
+    | Empty -> None
+    | Node (x, Empty, _) -> Some x
+    | Node (_, l, _) -> min l
+  in
+  match tree with
+  | Empty -> None
+  | Node (_, _, r) -> min r
+
+let pred tree =
+  let rec max tree =
+    match tree with
+    | Empty -> None
+    | Node (x, _, Empty) -> Some x
+    | Node (_, _, r) -> max r
+  in
+  match tree with
+  | Empty -> None
+  | Node (_, l, _) -> max l
 
 (*----------------------------------------------------------------------------*]
  In lectures you two different approaches to deletion, using either [succ] or
@@ -140,6 +216,43 @@ let rec mirror = function
  Node (Node (Empty, 6, Empty), 11, Empty))
 [*----------------------------------------------------------------------------*)
 
+let get = function
+  | Some x -> x
+  | None -> raise (Invalid_argument "Option.get")
+
+let rec delete x bst =
+  if not (member x bst) then
+    bst
+  else
+    match bst with
+    | Empty -> Empty
+    | Node (y, l, r) ->
+      if x = y then
+        try
+          let s = get (succ (Node (y, l, r))) in
+          Node (s, l, delete s r)
+        with Invalid_argument _ -> Empty
+      else if x < y then
+        Node (y, delete x l, r)
+      else
+        Node (y, l, delete x r)
+
+let rec delete' x bst =
+  if not (member x bst) then
+    bst
+  else
+    match bst with
+    | Empty -> Empty
+    | Node (y, l, r) ->
+      if x = y then
+        try
+          let p = get (pred (Node (y, l, r))) in
+          Node (p, delete' p l, r)
+        with Invalid_argument _ -> Empty
+      else if x < y then
+        Node (y, delete' x l, r)
+      else
+        Node (y, l, delete' x r)
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  DICTIONARIES
@@ -152,6 +265,9 @@ let rec mirror = function
  type as [('key, 'value) dict].
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
 
+type ('a, 'b) dict =
+  | Empty
+  | Node of 'a * 'b * ('a, 'b) dict * ('a, 'b) dict
 
 (*----------------------------------------------------------------------------*]
  Write the test case [test_dict]:
@@ -161,6 +277,10 @@ let rec mirror = function
          /
      "c":-2
 [*----------------------------------------------------------------------------*)
+
+let test_dict = Node ("b", 1,
+                Node ("a", 0, Empty, Empty),
+                Node ("d", 2, Node ("c", (-2), Empty, Empty), Empty))
 
 (*----------------------------------------------------------------------------*]
  The function [dict_get key dict] returns the value with the given key. Because
@@ -172,7 +292,17 @@ let rec mirror = function
  - : int option = Some (-2)
 [*----------------------------------------------------------------------------*)
 
-      
+let rec dict_get key dict =
+  match dict with
+  | Empty -> None
+  | Node (k, v, l, r) ->
+    if key = k then
+      Some v
+    else if key < k then
+      dict_get key l
+    else
+      dict_get key r
+
 (*----------------------------------------------------------------------------*]
  The function [print_dict] accepts a dictionary with key of type [string] and
  values of type [int] and prints (in the correct order) lines containing 
@@ -189,6 +319,20 @@ let rec mirror = function
  - : unit = ()
 [*----------------------------------------------------------------------------*)
 
+let rec list_of_dict = function
+  | Empty -> []
+  | Node (k, v, l, r) ->
+    list_of_dict l @ [[k; string_of_int v]] @ list_of_dict r
+
+let print_dict tree =
+  let xs = list_of_dict tree in
+  let rec aux xs =
+    match xs with
+    | [] -> ()
+    | [k; v] :: xs -> print_string (k ^ " : " ^ v ^ "\n") ; aux xs
+    | _ -> failwith "There is apparently another unmatched case."
+  in
+  aux xs
 
 (*----------------------------------------------------------------------------*]
  The function [dict_insert key value dict] inserts [value] into [dict] under the
@@ -209,3 +353,13 @@ let rec mirror = function
  - : unit = ()
 [*----------------------------------------------------------------------------*)
 
+let rec dict_insert key value dict =
+  match dict with
+  | Empty -> Node (key, value, Empty, Empty)
+  | Node (k, v, l, r) ->
+    if key = k then
+      Node (k, value, l, r)
+    else if key < k then
+      Node (k, v, dict_insert key value l, r)
+    else
+      Node (k, v, l, dict_insert key value r)

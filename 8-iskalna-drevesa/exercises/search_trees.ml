@@ -6,6 +6,9 @@
  empty) subtrees. We assume no further structure of the trees.
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
 
+type tree =
+    | Empty
+    | Node of 'a * 'a tree * 'a tree
 
 (*----------------------------------------------------------------------------*]
  We define a test case for simpler testing of functions. The test case
@@ -18,6 +21,12 @@
       0   6   11
 [*----------------------------------------------------------------------------*)
 
+let leaf x = Node(x, Empty, Empty)
+let test_tree =
+    let left = Node(2, leaf 0, Empty)
+    and right = Node(7, leaf 6, leaf 11)
+    in
+    Node(5, left, right)
 
 (*----------------------------------------------------------------------------*]
  The function [mirror] returns a mirrored tree. When applied to our test tree
@@ -34,6 +43,9 @@
  Node (Empty, 2, Node (Empty, 0, Empty)))
 [*----------------------------------------------------------------------------*)
 
+let rec mirror = function
+    | Empty -> Empty
+    | Node(element, left, right) -> Node(element, mirror right, mirror left)
 
 (*----------------------------------------------------------------------------*]
  The function [height] returns the height (or depth) of the tree and the

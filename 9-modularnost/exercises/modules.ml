@@ -55,8 +55,12 @@ module type NAT = sig
   val eq   : t -> t -> bool
   val zero : t
   (* Add what's missing here! *)
-  (* val to_int : t -> int *)
-  (* val of_int : int -> t *)
+  val one : t
+  val add : t -> t -> t
+  val sub : t -> t -> t
+  val mult : t -> t -> t
+  val to_int : t -> int 
+  val of_int : int -> t
 end
 
 (*----------------------------------------------------------------------------*]
@@ -71,10 +75,19 @@ end
 module Nat_int : NAT = struct
 
   type t = int
-  let eq x y = failwith "later"
+  let eq x y = x = y
   let zero = 0
-  (* Add what's missing here! *)
-
+  let one = 1
+  let add x y = ( + ) x y
+  let sub x y = x - y
+  let mult x y= ( * ) x y
+  let to_int n = n
+  (* [of_int k] if k < 0 then this function
+      - fails with an error?
+      - uses 0 instead?
+      - uses absolute value instead?
+       *)
+  let of_int k = max 0 k 
 end
 
 (*----------------------------------------------------------------------------*]
@@ -90,11 +103,35 @@ end
 
 module Nat_peano : NAT = struct
 
-  type t = unit (* This needs to be changed! *)
-  let eq x y = failwith "later"
-  let zero = () (* This needs to be changed! *)
-  (* Add what's missing here! *)
-
+  type t = Zero | S of t
+  let rec eq x y =
+    match (x, y) with
+    | (Zero, Zero) -> true
+    | (Zero, S _) -> false
+    | (S _, Zero) -> false
+    | (S x, S y) -> eq x y
+  let zero = Zero
+  let one = S (Zero)
+  let rec add x y =
+    match (x, y) with
+    | (x, Zero) -> x
+    | (x, S y) -> add (S x) y
+  let rec sub x y =
+    match (x, y) with
+    | (_, Zero) -> x
+    | (Zero, _) -> Zero
+    | (S x, S y) -> sub x y
+  let rec mult x y =
+    match (x, y) with
+    | (x, Zero) -> Zero
+    | (Zero, y) -> Zero
+    | (S x, y) -> add y (mult x y)
+  let rec to_int = function
+    | Zero -> 0
+    | S x -> 1 + to_int x
+  let rec of_int = function
+    | 0 -> Zero
+    | x -> S (of_int (x-1))
 end
 
 (*----------------------------------------------------------------------------*]

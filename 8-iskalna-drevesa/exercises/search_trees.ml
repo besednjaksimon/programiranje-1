@@ -216,39 +216,29 @@ let pred tree =
  Node (Node (Empty, 6, Empty), 11, Empty))
 [*----------------------------------------------------------------------------*)
 
-let get = function
-  | Some x -> x
-  | None -> raise (Invalid_argument "Option.get")
-
 let rec delete x bst =
-  if not (member x bst) then
-    bst
-  else
     match bst with
     | Empty -> Empty
     | Node (y, l, r) ->
       if x = y then
-        try
-          let s = get (succ (Node (y, l, r))) in
+        match succ (Node (y, l, r)) with
+        | Some s -> 
           Node (s, l, delete s r)
-        with Invalid_argument _ -> Empty
+        | None -> l
       else if x < y then
         Node (y, delete x l, r)
       else
         Node (y, l, delete x r)
 
 let rec delete' x bst =
-  if not (member x bst) then
-    bst
-  else
     match bst with
     | Empty -> Empty
     | Node (y, l, r) ->
       if x = y then
-        try
-          let p = get (pred (Node (y, l, r))) in
+        match pred (Node (y, l, r)) with
+        | Some p ->
           Node (p, delete' p l, r)
-        with Invalid_argument _ -> Empty
+        | None -> r
       else if x < y then
         Node (y, delete' x l, r)
       else
@@ -265,9 +255,7 @@ let rec delete' x bst =
  type as [('key, 'value) dict].
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
 
-type ('a, 'b) dict =
-  | Empty
-  | Node of 'a * 'b * ('a, 'b) dict * ('a, 'b) dict
+type ('a, 'b) dict = ('key * 'value) tree
 
 (*----------------------------------------------------------------------------*]
  Write the test case [test_dict]:
@@ -278,9 +266,8 @@ type ('a, 'b) dict =
      "c":-2
 [*----------------------------------------------------------------------------*)
 
-let test_dict = Node ("b", 1,
-                Node ("a", 0, Empty, Empty),
-                Node ("d", 2, Node ("c", (-2), Empty, Empty), Empty))
+let test_dict : (string, int) dict
+    = Node (("b", 1), leaf ("a", 0), Node(("d", 2), leaf ("c", -2), Empty))
 
 (*----------------------------------------------------------------------------*]
  The function [dict_get key dict] returns the value with the given key. Because
@@ -295,7 +282,7 @@ let test_dict = Node ("b", 1,
 let rec dict_get key dict =
   match dict with
   | Empty -> None
-  | Node (k, v, l, r) ->
+  | Node ((k, v), l, r) ->
     if key = k then
       Some v
     else if key < k then
@@ -321,7 +308,7 @@ let rec dict_get key dict =
 
 let rec list_of_dict = function
   | Empty -> []
-  | Node (k, v, l, r) ->
+  | Node ((k, v), l, r) ->
     list_of_dict l @ [[k; string_of_int v]] @ list_of_dict r
 
 let print_dict tree =
@@ -329,7 +316,7 @@ let print_dict tree =
   let rec aux xs =
     match xs with
     | [] -> ()
-    | [k; v] :: xs -> print_string (k ^ " : " ^ v ^ "\n") ; aux xs
+    | [k; v] :: xs -> print_endline (k ^ " : " ^ v) ; aux xs
     | _ -> failwith "There is apparently another unmatched case."
   in
   aux xs
@@ -355,11 +342,11 @@ let print_dict tree =
 
 let rec dict_insert key value dict =
   match dict with
-  | Empty -> Node (key, value, Empty, Empty)
-  | Node (k, v, l, r) ->
+  | Empty -> Node ((key, value), Empty, Empty)
+  | Node ((k, v), l, r) ->
     if key = k then
-      Node (k, value, l, r)
+      Node ((k, value), l, r)
     else if key < k then
-      Node (k, v, dict_insert key value l, r)
+      Node ((k, v), dict_insert key value l, r)
     else
-      Node (k, v, l, dict_insert key value r)
+      Node ((k, v), l, dict_insert key value r)

@@ -54,7 +54,6 @@ module type NAT = sig
 
   val eq   : t -> t -> bool
   val zero : t
-  (* Add what's missing here! *)
   val one : t
   val add : t -> t -> t
   val sub : t -> t -> t
@@ -155,9 +154,15 @@ end
  # sum_nat_100 (module Nat_peano);;
  - : int = 4950
 [*----------------------------------------------------------------------------*)
-
-let sum_nat_100 (module Nat : NAT) = ()
-
+(* NI ŠE REŠENO
+let sum_nat_100 (module Nat : NAT) =
+  let rec aux x acc =
+    match x with
+    | Nat.zero -> Nat.to_int acc
+    | x -> aux (Nat.sub x Nat.one) (Nat.add acc x)
+  in
+  aux (Nat.of_int 100) (Nat.of_int 0)
+*)
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  Now we follow the fable told by John Reynolds in the introduction.
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
@@ -171,7 +176,13 @@ let sum_nat_100 (module Nat : NAT) = ()
 module type COMPLEX = sig
   type t
   val eq : t -> t -> bool
-  (* Add what's missing here! *)
+  val zero : t
+  val one : t
+  val i : t
+  val neg : t -> t
+  val conj : t -> t
+  val add : t -> t -> t
+  val mult : t -> t -> t
 end
 
 (*----------------------------------------------------------------------------*]
@@ -179,12 +190,26 @@ end
  be the cartesian representation.
 [*----------------------------------------------------------------------------*)
 
-module Cartesian : COMPLEX = struct
+module Cartesian (* : COMPLEX *) = struct
 
   type t = {re : float; im : float}
 
-  let eq x y = failwith "later"
-  (* Add what's missing here! *)
+  let eq x y = x = y
+  let zero = {re = 0.; im = 0.}
+  let one = {re = 1.; im = 0.}    
+  let i = {re = 0.; im = 1.}
+  let neg = function
+    | {re = x; im = y} -> {re = -.x; im = -.y}
+  let conj = function
+    | {re = x; im = y} -> {re = x; im = -.y}
+  let add x y =
+    match (x, y) with
+    | ({re = x1; im = y1}, {re = x2; im = y2}) ->
+      {re = x1 +. x2; im = y1 +. y2}
+  let mult x y =
+    match (x, y) with
+    | ({re = x1; im = y1}, {re = x2; im = y2}) ->
+      {re = (x1 *. x2) -. (y1 *. y2); im = (x1 *. y2) +. (x2 *. y1)}
 
 end
 
@@ -198,7 +223,7 @@ end
 [*----------------------------------------------------------------------------*)
 
 
-module Polar : COMPLEX = struct
+module Polar (* : COMPLEX *) = struct
 
   type t = {magn : float; arg : float}
 
@@ -207,8 +232,28 @@ module Polar : COMPLEX = struct
   let rad_of_deg deg = (deg /. 180.) *. pi
   let deg_of_rad rad = (rad /. pi) *. 180.
 
-  let eq x y = failwith "later"
-  (* Add what's missing here! *)
+  let eq x y =
+    match (x, y) with
+    | ({magn = r1; arg = b1}, {magn = r2; arg = b2}) ->
+      let diff = (b2 -. b1) /. pi in
+      r1 = r2 && diff = snd (modf diff)
+  let zero = {magn = 0.; arg = 0.}
+  let one = {magn = 1.; arg = 0.}
+  let i = {magn = 1.; arg = pi /. 2.}
+  let neg = function
+    | {magn = r; arg = b} -> {magn = r; arg = b +. pi}
+  let conj = function
+    | {magn = r; arg = b} -> {magn = r; arg = -.b}
+  let add x y =
+    match (x, y) with
+    | ({magn = r1; arg = b1}, {magn = r2; arg = b2}) ->
+      let (x1, y1, x2, y2) = (r1 *. cos b1, r1*. sin b1, r2 *. cos b2, r2 *. sin b2) in
+      let (c, d) = (x1 +. x2, y1 +. y2) in
+      {magn = sqrt (c ** 2. +. d ** 2.); arg = atan (d /. c)}
+  let mult x y =
+    match (x, y) with
+    | ({magn = r1; arg = b1}, {magn = r2; arg = b2}) ->
+      {magn = r1 *. r2; arg = b1 +. b2}
 
 end
 

@@ -27,7 +27,22 @@
 #     [10, 2, 0, 4, 11, 15, 17, 5, 18]
 ##############################################################################
 
+a = [10, 4, 5, 15, 11, 2, 17, 0, 18]
 
+def pivot(a, start, end):
+    index = start + 1
+    if start >= len(a) or end >= len(a):
+        return []
+    else:
+        for i in range(start+1, end+1):
+            if a[i] <= a[start]:
+                a[i], a[index] = a[index], a[i]
+                index += 1
+        a[start], a[index-1] = a[index-1], a[start]
+        return index - 1
+
+pivot(a, 1, 7)
+a
 
 ##############################################################################
 # We wish to implement quicksort.
@@ -43,7 +58,22 @@
 #   [2, 3, 4, 5, 10, 11, 15, 17, 18]
 ##############################################################################
 
+b = [10, 4, 5, 15, 11, 3, 17, 2, 18]
 
+def quicksort_part(a, start, end):
+    if end - start == 0:
+        return
+    p = pivot(a, start, end)
+    quicksort_part(a, start, p)
+    quicksort_part(a, p+1, end)
+
+
+def quicksort(a):
+    quicksort_part(a, 0, len(a)-1)
+    return a
+    
+
+quicksort(b)
 
 ##############################################################################
 # We are searching for the k-th smallest element of an array.
@@ -59,3 +89,18 @@
 # element of [a]. The array is allowed to change. The goal of the exercise is
 # to solve the problem without fully sorting [a].
 ##############################################################################
+
+c = [10, 4, 5, 15, 11, 3, 17, 2, 18]
+
+def kth_element(a, k):
+    n = len(a)
+    p = pivot(a, 0, n-1)
+    if p == k:
+        return a[p]
+    elif p > k:
+        kth_element(a[0:p], k)
+    else:
+        kth_element(a[p+1:n-1], k-p-1)
+
+
+kth_element(c, 3)

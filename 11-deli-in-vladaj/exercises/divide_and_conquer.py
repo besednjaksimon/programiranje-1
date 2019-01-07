@@ -29,10 +29,11 @@
 
 a = [10, 4, 5, 15, 11, 2, 17, 0, 18]
 
+
 def pivot(a, start, end):
     index = start + 1
     if start >= len(a) or end >= len(a):
-        return []
+        raise ValueError('Indices are out of bounds!')
     else:
         for i in range(start+1, end+1):
             if a[i] <= a[start]:
@@ -60,6 +61,7 @@ a
 
 b = [10, 4, 5, 15, 11, 3, 17, 2, 18]
 
+
 def quicksort_part(a, start, end):
     if end - start == 0:
         return
@@ -71,13 +73,13 @@ def quicksort_part(a, start, end):
 def quicksort(a):
     quicksort_part(a, 0, len(a)-1)
     return a
-    
+
 
 quicksort(b)
 
 ##############################################################################
 # We are searching for the k-th smallest element of an array.
-# 
+#
 # Example: If we define
 #
 # >>> a = [10, 4, 5, 15, 11, 3, 17, 2, 18]
@@ -92,15 +94,13 @@ quicksort(b)
 
 c = [10, 4, 5, 15, 11, 3, 17, 2, 18]
 
+
 def kth_element(a, k):
     n = len(a)
     p = pivot(a, 0, n-1)
     if p == k:
         return a[p]
     elif p > k:
-        kth_element(a[0:p], k)
+        return kth_element(a[0:p], k)
     else:
-        kth_element(a[p+1:n-1], k-p-1)
-
-
-kth_element(c, 3)
+        return kth_element(a[p+1:n], k-p-1)

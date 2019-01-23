@@ -97,6 +97,22 @@ let rec bills_rec n =
       
       
 
+(* Use the generic memozation function below to write a memoized recursive
+   algorithm. *)
+let memoiziraj_rec odviti_f =
+   let rezultati = Hashtbl.create 512 in
+   let rec mem_f x =
+     match Hashtbl.find_opt rezultati x with
+     | None ->
+         let y = odviti_f mem_f x in
+         Hashtbl.add rezultati x y;
+         y
+     | Some y ->
+         y
+   in
+   mem_f
+
+let rec bills_mem n = failwith "todo"
 
 (* 2.ii) Draw the call tree of your recursive definition for n = 5 and identify
    which subproblems are repeated. Can you find an evaluation order that will

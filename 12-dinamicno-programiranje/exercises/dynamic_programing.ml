@@ -22,32 +22,18 @@ let test_matrix =
      [| 7 ; 0 ; 1 |] |]
 
 let max_cheese cheese_matrix =
-  let rec aux i j cheese_matrix =
-    let n = Array.length cheese_matrix.(0)
-    and m = Array.length cheese_matrix in
-    if (n-i) > 0 && (m-j) > 0 then
-      cheese_matrix.(i).(j) + max (aux (i+1) j cheese_matrix) (aux i (j+1) cheese_matrix)
-    else if n = i then
-      
-    else
-      Array.fold_left (+) 0 (Array.sub cheese_matrix i n)
-  in
-  aux 0 0 cheese_matrix
-
-(* 
-let max_cheese cheese_matrix =
   let dimx = Array.length cheese_matrix in
   if dimx = 0 then 0 else
-  let dimy = Array.lenght cheese_matrix.(0) in
+  let dimy = Array.length cheese_matrix.(0) in
   let rec best_path x y =
-    print_endline(string_of_int x ^ ", " ^ (string_of_int y))
+    print_endline(string_of_int x ^ ", " ^ (string_of_int y));
     let current_cheese = cheese_matrix.(x).(y) in
     let best_down = if (y+1) = dimy then 0 else best_path x (y+1)
     and best_right = if (x+1) = dimx then 0 else best_path (x+1) y in
     current_cheese + max best_right best_down
   in
   best_path 0 0
-*)
+
 
 (*----------------------------------------------------------------------------*]
  We are solving the problem of alternatingly colored towers. There are four
@@ -108,8 +94,47 @@ let articles = [|
   ("juice", 1.15, 2.0)
 |]
 
-let rec best_value articles max_w =
-  let rec get_item articles max_w price (_,apr,aw) =
+let best_value articles w_max =
+  let weight = function
+    | (_, _, w) -> w
+  and price = function
+    | (_, p, _) -> p
+  in
+  let rec aux articles (p_sum, w_sum) =
+    if w_sum <= 0. then p_sum
+    else
+      let buy article =
+        if weight article > w_sum then (p_sum, 0.)
+        else
+          (p_sum +. price article, w_sum -. weight article)
+      in
+      Array.map buy articles
+      |> Array.map (aux articles)
+      |> Array.fold_left max 0.
+  in aux articles (0., w_max)
 
+let best_value_unique articles w_max =
+  let options = Array.init (Array.length articles) (fun _ -> 1)
+  in
+  let weight = function
+    | (_, _, w) -> w
+  and price = function
+    | (_, p, _) -> p
+  in
+  let rec aux articles (p_sum, w_sum, options) =
+    if w_sum <= 0. then p_sum
+    else
+      let buy i article =
+        if weight article > w_sum || options.(i) = 0
+          then (p_sum, 0., options)
+        else
+          let options = Array.copy options
+          in
+          options.(i) <- 0;
+          (p_sum +. price article, w_sum -. weight article, options)
+      in
+      Array.mapi buy articles
+      |> Array.map (aux articles)
+      |> Array.fold_left max 0.
+  in aux articles (0., w_max, options)
   
-  and shopper 

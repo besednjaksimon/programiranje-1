@@ -2,33 +2,17 @@ let apply f x = f x
 
 let revapply x f = f x
 
-let rec drop n xs =
-  if n <= 0 then
-    Some xs
+let drop n xs =
+  if List.length xs < n then None
   else
-    match xs with
-    | [] -> None
-    | _ :: xs -> drop (n-1) xs
+    let rec aux acc n xs =
+      match n, xs with
+      | 0, _ -> Some (List.rev acc)
+      | n, x :: xs -> aux (x :: acc) (n-1) xs
+      | _, _ -> failwith "There is apparently another unmatched case."
+    in
+    aux [] n xs
 
-let rec take n xs =
-  if n <= 0 then
-    Some []
-  else
-    match xs with
-    | [] -> None
-    | x::xs ->
-      begin match take (n-1) xs with
-       | None -> None
-       | Some t -> Some (x :: t)
-      end
+let rec take n xs = ()
 
-let take_tailrec n xs =
-  let rec aux n acc xs =
-    if n <= 0 then
-      Some (List.rev acc)
-    else
-      match xs with
-      | [] -> None
-      | x::xs -> aux (n-1) (x::acc) xs
-  in
-  aux n [] xs
+let take_tailrec n xs = ()

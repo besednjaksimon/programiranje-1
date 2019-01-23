@@ -26,7 +26,8 @@ module type Comparable = sig
 
 module Cmp_Int = struct
   type t = int
-  let compare x y = failwith "to do"
+  let compare x y =
+    if x < y then LT else if x = y then EQ else GT 
 end
 
 (*----------------------------------------------------------------------------*]
@@ -47,6 +48,14 @@ OCaml functions. It compares strings [s] and [t] lexicographically, yielding
 -1 if s < t, 0 if s = t and 1 otherwise.
 [*----------------------------------------------------------------------------*)
 
+module Cmp_String = struct
+  type t = string
+  let compare x y =
+    match Pervasives.compare x y with
+    | s when s < 0 -> LT
+    | 0 -> EQ
+    | _ -> GT
+end
 
 (*----------------------------------------------------------------------------*]
  A functor is simply a function on the module level. We can define a functor
@@ -54,13 +63,14 @@ OCaml functions. It compares strings [s] and [t] lexicographically, yielding
  [Comparable] module on the same carrier type but with inverted order relation.
 [*----------------------------------------------------------------------------*)
 
-(*
 module Cmp_inv (Cmp : Comparable) : Comparable with type t = Cmp.t  = struct
-  type t = ...
-  let compare x y = ...
+  type t = Cmp.t
+  let compare x y =
+    match Cmp.compare x y with
+    | LT -> GT
+    | EQ -> EQ
+    | GT -> LT
 end
- *)
-
 
 (*----------------------------------------------------------------------------*]
  To use a functor, like other functions, we have to apply it. One difference
@@ -91,6 +101,14 @@ let _ = Cmp_Int_inv.compare (-9000) 42;;
  module [Cmp_lex : Comparable with type t = A.t * B.t]
 [*----------------------------------------------------------------------------*)
 
+module Cmp_lex (A : Comparable) (B: Comparable)
+  : Comparable with type t = A.t * B.t = struct
+    type t = A.t * B.t
+    let compare (a1, b1) (a2, b2) =
+      match A.compare a1 a2 with
+      | (LT | GT) as x -> x
+      | EQ -> B.compare b1 b2
+end
 
 (*----------------------------------------------------------------------------*]
  Finally, here is the signature of a priority queue. We have a type of priority
@@ -100,36 +118,51 @@ let _ = Cmp_Int_inv.compare (-9000) 42;;
  is non-empty.
 [*----------------------------------------------------------------------------*)
 
-(*
 module type Priority_Queue = sig
     type h
     type el
     val empty : h
     val pop : h -> (h * el) option
-    val push : ...
+    val push : h -> el -> h
   end
- *)
-
-
+ 
 (*----------------------------------------------------------------------------*]
  We can implement a priority queue as a sorted list. Write a functor that takes
  a [Comparable] module as an argument and implements a priority queue with
  [Cmp.t] lists as carrier. Be careful about which types you want to hide.
 [*----------------------------------------------------------------------------*)
 
-(*
-module Sorted_List_Priority_Queue ... = struct
-
-  ...
-
+module Sorted_List_Priority_Queue (Cmp : Comparable) 
+  : Priority_Queue with type el = Cmp.t = struct
+  type h = Cmp.t list
+  type el = Cmp.t
+  let empty = []
+  let pop = function
+    | [] -> None
+    | x :: xs -> Some (xs, x) 
+  let rec insert x s_list =
+    match s_list with
+    | [] -> [x]
+    | y :: rest ->
+      (match Cmp.compare x y with
+       | LT -> x :: s_list
+       | EQ  -> s_list
+       | GT -> y :: (insert x rest))
+  let push h x = insert x h
 end
-*)
 
 (*----------------------------------------------------------------------------*]
  Apply your functor to build a priority queue of integers, and a priority queue
  of strings. Write some examples using push and pop!
 [*----------------------------------------------------------------------------*)
 
+module IntH = Sorted_List_Priority_Queue (Cmp_Int)
+module StringH = Sorted_List_Priority_Queue (Cmp_String)
+(*let e = IntH.empty;;
+let d = IntH.push e 1;;
+let d = IntH.push d 10;;
+let d = IntH.push d 2;;
+let g = IntH.pop d*)
 
 (*----------------------------------------------------------------------------*]
  Write a functor [To_List] that takes an implementation of [Priority_Queue] as
@@ -137,9 +170,12 @@ end
  priority queue and yields all of its elements as a list.
 [*----------------------------------------------------------------------------*)
 
-
-(* module To_List ... *)
-
+module To_List (Pq : Priority_Queue) = struct
+  let rec to_list h =
+    match Pq.pop h with
+    | None -> []
+    | Some (h, x) -> x :: (to_list h)
+end
 
 (*----------------------------------------------------------------------------*]
  Let's test your [To_List] functor! Like any other values, modules can also be
@@ -149,15 +185,14 @@ end
  too long.
 [*----------------------------------------------------------------------------*)
 
-(*
-let _ =
+let first =
   let h = List.fold_left IntH.push IntH.empty [1; 0; 9; 2] in
   let module TL = To_List(IntH) in
   TL.to_list h
 
-let _ =
+let second =
   let module H = Sorted_List_Priority_Queue (Cmp_inv(Cmp_Int)) in
   let module L = To_List(H) in
   let h = List.fold_left H.push H.empty [1; 0; 9; 2] in
   L.to_list h
- *)
+ 

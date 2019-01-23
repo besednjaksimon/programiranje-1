@@ -255,7 +255,7 @@ let rec delete' x bst =
  type as [('key, 'value) dict].
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
 
-type ('a, 'b) dict = ('key * 'value) tree
+type ('key, 'value) dict = ('key * 'value) tree
 
 (*----------------------------------------------------------------------------*]
  Write the test case [test_dict]:

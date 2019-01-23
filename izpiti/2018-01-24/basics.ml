@@ -7,10 +7,9 @@
    Primer: print_all [1; 2; 3; 4] = () in izpiše 1234
    ========================================================================== *)
 
-let rec print_all l =
-  match l with
+let rec print_all = function
   | [] -> ()
-  | hd::tl -> print_int hd; print_all tl
+  | x :: xs -> print_int x; print_all xs
 
 (* ==========================================================================
    NALOGA 1.2
@@ -26,14 +25,15 @@ let rec print_all l =
            map2_opt [1; 2; 3] [3; 2] (+) = None
    ========================================================================== *)
 
-let rec map2_opt l1 l2 f =
-  let rec aux l1 l2 f acc =
-    match l1, l2 with
-    | [], [] -> Some (List.rev acc)
-    | [], _ -> None
-    | _, [] -> None
-    | x::xs, y::ys ->
-      let a = f x y in
-      aux xs ys f (a::acc)
-  in
-  aux l1 l2 f []
+let map2_opt l1 l2 f =
+  if List.length l1 <> List.length l2 then None
+  else
+    let rec aux acc l1 l2 =
+      match l1, l2 with
+      | [], [] -> Some (List.rev acc)
+      | x :: xs, y :: ys ->
+        let a = f x y in
+        aux (a :: acc) xs ys
+      | _, _ -> failwith "Error."
+    in
+    aux [] l1 l2

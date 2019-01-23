@@ -1,6 +1,12 @@
-type 'a tree = Empty | Node of 'a tree * 'a * 'a tree
+type 'a tree =
+  | Empty
+  | Node of 'a tree * 'a * 'a tree
 
-let longer lst1 lst2 = if List.length lst1 > List.length lst2 then lst1 else lst2
+let longer xs ys =
+  if List.length xs > List.length ys then
+    xs
+  else
+    ys
 
 let rec decreasing upper_bound = function
   | Empty -> []
@@ -15,11 +21,11 @@ let rec increasing lower_bound = function
 let rec longest = function
   | Empty -> []
   | Node (l, x, r) ->
-      let combined1 = List.rev (decreasing x l) @ [x] @ increasing x r in
-      let combined2 = List.rev (increasing x l) @ [x] @ decreasing x r in
-      let long_combined = longer combined1 combined2 in
-      let long_subtrees = longer (longest l) (longest r) in
-      longer long_combined long_subtrees
+    let option1 = List.rev (decreasing x l) @ [x] @ (increasing x r) in
+    let option2 = List.rev (increasing x l) @ [x] @ (decreasing x r) in
+    let long_combined = longer option1 option2 in
+    let long_subtrees = longer (longest l) (longest r) in
+    longer long_combined long_subtrees
 
 (* TESTING *)
 

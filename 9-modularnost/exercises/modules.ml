@@ -60,6 +60,7 @@ module type NAT = sig
   val mult : t -> t -> t
   val to_int : t -> int 
   val of_int : int -> t
+
 end
 
 (*----------------------------------------------------------------------------*]
@@ -78,8 +79,8 @@ module Nat_int : NAT = struct
   let zero = 0
   let one = 1
   let add x y = ( + ) x y
-  let sub x y = x - y
-  let mult x y= ( * ) x y
+  let sub x y = max 0 (x - y)
+  let mult = ( * )
   let to_int n = n
   (* [of_int k] if k < 0 then this function
       - fails with an error?
@@ -87,6 +88,7 @@ module Nat_int : NAT = struct
       - uses absolute value instead?
        *)
   let of_int k = max 0 k 
+
 end
 
 (*----------------------------------------------------------------------------*]
@@ -128,9 +130,10 @@ module Nat_peano : NAT = struct
   let rec to_int = function
     | Zero -> 0
     | S x -> 1 + to_int x
-  let rec of_int = function
-    | 0 -> Zero
-    | x -> S (of_int (x-1))
+  let rec of_int n =
+    if n <= 0 then Zero
+    else S (of_int (n-1))
+
 end
 
 (*----------------------------------------------------------------------------*]
@@ -154,15 +157,17 @@ end
  # sum_nat_100 (module Nat_peano);;
  - : int = 4950
 [*----------------------------------------------------------------------------*)
-(* NI ŠE REŠENO
+
 let sum_nat_100 (module Nat : NAT) =
-  let rec aux x acc =
-    match x with
-    | Nat.zero -> Nat.to_int acc
-    | x -> aux (Nat.sub x Nat.one) (Nat.add acc x)
+  let hundred = Nat.of_int 100 in
+  let rec sum counter acc =
+    if Nat.eq counter hundred then
+      acc
+    else
+      sum (Nat.add counter Nat.one) (Nat.add acc counter)
   in
-  aux (Nat.of_int 100) (Nat.of_int 0)
-*)
+  sum Nat.zero Nat.zero |> Nat.to_int
+
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  Now we follow the fable told by John Reynolds in the introduction.
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
@@ -190,7 +195,7 @@ end
  be the cartesian representation.
 [*----------------------------------------------------------------------------*)
 
-module Cartesian (* : COMPLEX *) = struct
+module Cartesian : COMPLEX = struct
 
   type t = {re : float; im : float}
 
@@ -199,17 +204,23 @@ module Cartesian (* : COMPLEX *) = struct
   let one = {re = 1.; im = 0.}    
   let i = {re = 0.; im = 1.}
   let neg = function
-    | {re = x; im = y} -> {re = -.x; im = -.y}
+    | {re = x; im = y} -> {re = -. x; im = -. y}
   let conj = function
-    | {re = x; im = y} -> {re = x; im = -.y}
+    | {re = x; im = y} -> {re = x; im = -. y}
   let add x y =
     match (x, y) with
     | ({re = x1; im = y1}, {re = x2; im = y2}) ->
       {re = x1 +. x2; im = y1 +. y2}
+    (* {re = x.re +. y.re; im = x.im +. y.im} *)
   let mult x y =
     match (x, y) with
     | ({re = x1; im = y1}, {re = x2; im = y2}) ->
       {re = (x1 *. x2) -. (y1 *. y2); im = (x1 *. y2) +. (x2 *. y1)}
+    (*
+    let re = x.re *. y.re -. x.im *. y.im in
+    let im = x.im *. y.re +. x.re *. y.im in
+    {re; im} 
+       *)
 
 end
 
@@ -272,7 +283,52 @@ end
  and [print] (where print should again work only on [(string, int) t)].
 [*----------------------------------------------------------------------------*)
 
+module type DICT = sig
 
+  type ('key, 'value) t
+  val empty : ('key, 'value) t
+  val get : 'key -> ('key, 'value) t -> 'value option
+  val insert : 'key -> 'value -> ('key, 'value) t -> ('key, 'value) t
+  val print : (string, int) t -> unit
+
+end
+
+module Tree_dict : DICT = struct
+
+  type ('key, 'value) t =
+    | D_Empty
+    | D_Node of ('key, 'value) t * 'key * 'value * ('key, 'value) t
+
+  let empty = D_Empty
+  let rec get key dict =
+    match dict with
+    | D_Empty -> None
+    | D_Node (l, k, v, r) ->
+      if key = k then
+        Some v
+      else if key < k then
+        get key l
+      else
+        get key r
+  let rec insert key value dict =
+    match dict with
+    | D_Empty -> D_Node (D_Empty, key, value, D_Empty)
+    | D_Node (l, k, v,  r) ->
+      if key = k then
+        D_Node (l, k, value, r)
+      else if key < k then
+        D_Node (insert key value l, k, v, r)
+      else
+        D_Node (l, k, v, insert key value r)
+  let rec print = function
+  | D_Empty -> ()
+  | D_Node (d_l, k, v, d_r) -> (
+    print d_l;
+    print_string (k ^ " : "); print_int v; print_newline ();
+    print d_r)
+  
+end
+  
 (*----------------------------------------------------------------------------*]
  The function [count (module Dict) list] counts how often certain elements
  appear in [list] using the chosen dictionary module and prints it.
@@ -284,4 +340,16 @@ end
  - : unit = ()
 [*----------------------------------------------------------------------------*)
 
-let count (module Dict : DICT) list = ()
+let count (module Dict : DICT) list =
+  let rec counter dict = function
+  | [] -> Dict.print dict
+  | x :: xs -> 
+    let new_count = 
+      match Dict.get x dict with
+      | Some x -> x + 1 
+      | None -> 1
+    in
+    let new_dict = Dict.insert x new_count dict in
+    counter new_dict xs
+in
+counter Dict.empty list

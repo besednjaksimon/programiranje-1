@@ -35,18 +35,17 @@ end
    Napišite modul, ki za predstavitev linearnih preslikav uporablja matrike.
    ========================================================================== *)
 
-module Matrix : Linear = struct
-  type t = int*int*int*int
-
+module Matrix (* : Linear *) = struct
+  type t = int * int * int * int
   let id = (1, 0, 0, 1)
-  let apply (x, y) (a, b, c, d) = (x*a + y*b, x*c + y*d)
+  let apply (x, y) (a, b, c, d) = (a*x + b*y, c*x + d*y)
   let of_matrix m = m
   let of_function f =
-    let (a, c) = f (1, 0) in
-    let (b, d) = f (0, 1) in
+    let (a, b) = f (1, 0)
+    and (c, d) = f (0, 1) in
     (a, b, c, d)
-  let compose (a, b, c, d) (e, f, g, h) =
-    (a*e + b*g, a*f + b*h, c*e + d*g, c*f + c*h)
+  let compose (a1, b1, c1, d1) (a2, b2, c2, d2) =
+    (a1*a2 + b1*c2, a1*b2 + b1*d2, c1*a2 + d1*c2, c1*b2 + d1*d2)
 end
 
 (* ==========================================================================
@@ -54,12 +53,13 @@ end
 
    Napišite modul, ki za predstavitev linearnih preslikav uporablja funkcije.
    ========================================================================== *)
-module Function : Linear = struct
-  type t = int*int -> int*int
 
-  let id = (fun x -> x)
-  let apply v f = f v
-  let of_matrix (a, b, c, d) = fun (x, y) -> (x*a + y*b, x*c + y*d)
+module Function (* : Linear *) = struct
+  type t = (int*int) -> (int*int)
+  let id = fun x -> x
+  let apply (x, y) f = f (x, y)
+  let of_matrix (a, b, c, d) =
+    fun (x, y) -> (a*x + b*y, c*x + d*y)
   let of_function f = f
   let compose f g = fun x -> f (g x)
 end

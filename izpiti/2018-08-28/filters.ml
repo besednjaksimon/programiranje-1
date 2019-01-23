@@ -1,29 +1,34 @@
-type 'a veriga = Filter of ('a -> bool) * 'a list * 'a veriga | Ostalo of 'a list
+type 'a veriga =
+  | Filter of ('a -> bool) * 'a list * 'a veriga
+  | Ostalo of 'a list
 
-
-let test = Filter((fun x -> x < 0), [], Filter((fun x -> x < 10), [], Ostalo []))
-
+let test = Filter ((fun x -> x < 0), [], Filter ((fun x -> x < 10), [], Ostalo []))
+let test2 = Filter ((fun x -> x < 0), [-5; -7], Filter ((fun x -> x < 10), [7; 2], Ostalo [100]))
 
 let rec vstavi x = function
-  | Ostalo sez -> Ostalo (x :: sez)
-  | Filter (f, sez, veriga) when f x -> Filter (f, x :: sez, veriga)
-  | Filter (f, sez, veriga) -> Filter (f, sez, vstavi x veriga)
-
+  | Ostalo ys -> Ostalo (x :: ys)
+  | Filter (f, xs, c) ->
+    if f x then
+      Filter (f, x :: xs, c)
+    else
+      Filter (f, xs, vstavi x c)
 
 let rec poisci x = function
-  | Ostalo sez -> List.mem x sez
-  | Filter (f, sez, veriga) when f x -> List.mem x sez
-  | Filter (_, _, veriga) -> poisci x veriga
-
+  | Ostalo ys -> List.mem x ys
+  | Filter (f, xs, c) ->
+    if f x then
+      List.mem x xs
+    else
+      poisci x c
 
 let rec izprazni_filtre = function
-  | Ostalo sez -> (Ostalo [], sez)
-  | Filter (f, sez, veriga) ->
-      let prazni, vsebina = izprazni_filtre veriga in
-      (Filter (f, [], prazni), sez @ vsebina)
+  | Ostalo ys -> (Ostalo [], ys)
+  | Filter (f, xs, c) ->
+    let prazna, seznami = izprazni_filtre c in
+      (Filter (f, [], prazna), xs @ seznami)
 
 
 let rec dodaj_filter f veriga =
-  let prazni, vsebina = izprazni_filtre veriga in
-  let nova_veriga = Filter (f, [], prazni) in
-  List.fold_right vstavi vsebina nova_veriga
+  let prazna, seznam = izprazni_filtre veriga in
+  let nova_veriga = Filter (f, [], prazna) in
+  List.fold_right vstavi seznam nova_veriga

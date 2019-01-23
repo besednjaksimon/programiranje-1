@@ -16,12 +16,13 @@
    zgornji primer.
    ========================================================================== *)
 
-type filter_tree = Node of int * filter_tree * filter_tree
-                 | Box of int list
+type filter_tree = 
+  | Node of  int * filter_tree * filter_tree
+  | Box of int list
 
-let example_tree = Node(10,
-                Node(5, (Box [1]), (Box [])),
-                Node(15, (Box []), (Box [19;20])))
+let example_tree = Node (10,
+                        Node (5, Box [1], Box []),
+                        Node (15, Box [], Box [19; 20]))
 
 (* ==========================================================================
    NALOGA 2.2
@@ -42,13 +43,13 @@ let example_tree = Node(10,
           /  \    /  \                              /  \    /  \
          [1] []  []  [19;20]                       [1] [] [12] [19;20]
    ========================================================================== *)
-let rec insert x ftree =
-  match ftree with
-  | Node(f, lt, rt) ->
-    if f > x
-    then Node(f, insert x lt, rt)
-    else Node(f, lt, insert x rt)
-  | Box(xs) -> Box(x::xs)
+
+let rec insert n = function
+  | Box zs -> Box (n :: zs)
+  | Node (k, l, r) ->
+    if n <= k then Node (k, insert n l, r)
+    else
+      Node (k, l, insert n r)
 
 (* ==========================================================================
    NALOGA 2.3
@@ -59,7 +60,7 @@ let rec insert x ftree =
    ========================================================================== *)
 
 let rec insert_many l ftree =
-  List.fold_right insert l ftree
+  List.fold_left (fun n t -> insert t n) ftree l
 
 (* ==========================================================================
    NALOGA 2.4
@@ -73,18 +74,17 @@ let rec insert_many l ftree =
    [1;2] [7]                              [1]   [2;7]
    ========================================================================== *)
 
-let rec boxed_correctly ftree =
-  let checker lower upper x =
-    match (lower, upper) with
-    | (None, None) -> true
-    | (Some l, None) -> l <= x
-    | (None, Some u) -> x < u
-    | (Some l, Some u) -> l <= x && x < u
-  in
-  let rec values_between lower upper ftree =
-    match ftree with
-    | Box(xs) -> List.for_all (checker lower upper) xs
-    | Node(f, lt, rt) ->
-      (values_between lower (Some f) lt) && (values_between (Some f) upper rt)
-  in
-  values_between None None ftree
+let boxed_correctly ftree =
+  match ftree with
+  | Box xs -> true
+  | Node (node, l, r) ->
+    let rec aux_l node = function
+      | Node (x, l, r) -> aux_l x l && aux_r x r
+      | Box xs ->
+        List.for_all ((>=) node) xs
+    and aux_r node = function
+      | Node (x, l, r) -> aux_l x l && aux_r x r
+      | Box xs ->
+      List.for_all ((<) node) xs
+    in
+    aux_l node l && aux_r node r

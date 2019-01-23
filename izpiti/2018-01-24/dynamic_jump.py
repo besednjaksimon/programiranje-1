@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 #  ==========================================================================
 #  NALOGA 4.1
 #
@@ -25,36 +27,24 @@
 #
 #  ==========================================================================
 
+test_matrix1 = [[1, 2, 0, 5], [0, 4, 1, 1], [8, 0, 4, 2]]
+test_matrix2 = [[2, 4, 1, 1], [3, 2, 0, 5], [8, 0, 7, 2]]
 
-from functools import lru_cache
 
-test_matrix = [[1, 2, 0, 5], [0, 4, 1, 1], [8, 0, 4, 2]]
-
-def max_points(matrix, max_steps):
+def max_apples(matrix, max_steps):
+    n = len(matrix)
+    m = len(matrix[0])
 
     @lru_cache(maxsize=None)
-    def jumper(r, c, k):
-        val = matrix[r][c]
-        #No more steps
-        if (k == 0):
-            return 0
-        #Hit boundaries
-        elif (r == len(matrix) - 1):
-            #Can't go down
-            if (c == len(matrix[r]) - 1):
-                #Can't go right
-                return val
+    def position(i, j, steps_left):
+        if steps_left > 0:
+            if j >= m:
+                return position(i+1, 0, steps_left-1)
+            elif i >= n:
+                return 0
             else:
-                #Can go right
-                return val + jumper(r, c+1, k-1)
+                return matrix[i][j] + max(position(i, j+1, steps_left-1),
+                                          position(i+1, 0, steps_left-1))
         else:
-            #Can go down
-            if (c == len(matrix[r]) - 1):
-                #Can't go right
-                return val + jumper(r+1, 0, k-1)
-            else:
-                #Can go right
-                return val + max(jumper(r, c+1, k-1), jumper(r+1, 0, k-1))
-
-    #Call function
-    return jumper(0,0,max_steps)
+            return 0
+    return position(0, 0, max_steps)
